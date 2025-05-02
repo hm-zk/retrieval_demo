@@ -1,6 +1,8 @@
-from sentence_transformers import SentenceTransformer
+from matplotlib import pyplot as plt
+from sentence_transformers import SentenceTransformer, util
 import numpy as np
 import faiss
+from sklearn.decomposition import PCA
 
 # Initialize model
 model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -18,9 +20,32 @@ sentences = [
 embeddings = model.encode(sentences)
 embeddings = np.array(embeddings).astype('float32')
 
+cosine_scores = util.pytorch_cos_sim(embeddings, embeddings)
+
+# Print cosine similarity matrix
+print(cosine_scores)
+
 dimension = embeddings.shape[1]
 index = faiss.IndexFlatL2(dimension)
 index.add(embeddings)
+
+
+pca = PCA(n_components=2)
+reduced = pca.fit_transform(embeddings)
+
+plt.figure(figsize=(8,6))
+for i, text in enumerate(sentences):
+    plt.scatter(reduced[i][0], reduced[i][1])
+    plt.annotate(f"{i+1}", (reduced[i][0], reduced[i][1]))
+plt.title("PCA Visualization of Text Embeddings")
+plt.xlabel("PC1")
+plt.ylabel("PC2")
+plt.grid(True)
+plt.show()
+
+dimension = embeddings.shape[1]
+index = faiss.IndexFlatL2(dimension)
+index.add(np.array(embeddings).astype('float32'))
 
 # Rephrasings of the same question
 queries = [
